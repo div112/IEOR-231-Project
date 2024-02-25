@@ -1,0 +1,45 @@
+Describing the code:
+
+
+
+Optimizer function: The function returns the optimal cost, the power values at each time step, and the state of charge at each time step.
+The function takes in the following input parameters:
+SOC0: initial state of charge of the battery
+E: energy needed to charge the battery
+c: cost of charging the battery per unit time
+N: number of data points
+chargemode: specifies the charging mode - either "sched" (scheduled) or "naive"
+Qcap: battery capacity
+efficiency: charging efficiency
+The function initializes two optimization variables P and SOC using the Variable function from the cvxpy optimization library.
+The objective function is defined based on the chargemode. If chargemode is "sched", the objective is to minimize the total cost of charging. 
+If chargemode is "naive", the objective is to maximize the final state of charge of the battery.
+The function sets up the constraints:
+The initial state of charge SOC[0] is equal to SOC0.
+The final state of charge SOC[N] is equal to the required energy E divided by the battery capacity Qcap plus the minimum state of charge SOCmin. If this value exceeds the maximum state of charge SOCmax, SOC[N] is set to SOCmax.
+The state of charge at each time step k is equal to the previous state of charge plus the product of the power value P[k] at that time step, the time step duration dt divided by the battery capacity Qcap, and the charging efficiency efficiency.
+The power value at each time step k is between 0 and the maximum power Pmax.
+The state of charge at each time step k is between the minimum state of charge SOCmin and the maximum state of charge SOCmax.
+The Problem function from the cvxpy optimization library is used to create an optimization problem with the objective function and constraints.
+The prob.solve function is used to solve the optimization problem with the specified parameters. If the problem is solvable, the optimal cost is computed as the sum of the product of the power values and the cost values. 
+If the problem is not solvable (i.e., the status is "unbounded" or "infeasible"), the cost is set to infinity.
+
+Case function: The function takes in the following input parameters:
+chargemode: specifies the charging mode - either "sched" (scheduled) or "naive"
+elecprices: a data frame that contains electricity prices over time
+car: the type of electric vehicle, which determines the battery capacity, charging efficiency, and energy consumption rate.
+The function creates an empty data frame sim_df with three columns: costhr, P, and SOC. The data frame has the same number of rows as the elecprices data frame.
+The function sets the car-specific variables based on the car input parameter. These variables include avg_cons, the average energy consumption rate from a database of electric vehicles, efficiency, the charging efficiency of the vehicle, and Qcap, the battery capacity of the vehicle.
+The function computes the energy consumption of the vehicle based on the distance travelled and the average energy consumption rate.
+The function selects the electricity prices from the elecprices data frame based on the charging mode specified by the chargemode input parameter. If chargemode is "naive", the function uses regular time-of-use pricing from the electricity provider. If chargemode is "sched", the function uses a base charging fee plus fixed hourly payments.
+The function initializes the initial state of charge SOC0 to the minimum state of charge SOCmin.
+The function calls the optimizer function to optimize the charging behavior of the electric vehicle over the charging session, using the input parameters SOC0, E, c, N, chargemode, Qcap, and efficiency. The function returns the optimal cost, power values, and state of charge values.
+The function updates the sim_df data frame with the simulated cost, power values, and state of charge values over the charging session.
+The function updates the initial state of charge SOC0 to the state of charge at the end of the charging session.
+The function returns the sim_df data frame, which contains the simulated cost, power values, and state of charge values over all the charging sessions.
+
+
+
+
+
+The function iterates over each charging session in the df_dp data frame. For each charging session, the function extracts the start and end times, the energy consumption, and the electricity prices.
